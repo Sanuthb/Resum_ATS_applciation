@@ -39,6 +39,8 @@ export const aiService = {
 };
 
 export const subscriptionService = {
+  createCheckoutSession: () => api.post('/subscription/create-checkout-session'),
+  verifySession: (sessionId) => api.get(`/subscription/verify-session?session_id=${encodeURIComponent(sessionId)}`),
   upgrade: () => api.post('/subscription/upgrade'),
 };
 

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FileText, LayoutDashboard, Zap, LogOut, User as UserIcon } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { FileText, LayoutGrid, LogOut, PenLine } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 const Navbar = () => {
@@ -12,71 +11,73 @@ const Navbar = () => {
   const isAuthPage = ['/login', '/register'].includes(location.pathname);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => setScrolled(window.scrollY > 16);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleLogout = async () => {
-    await signOut();
+  const handleLogout = () => {
+    signOut();
     navigate('/login');
   };
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 h-20 flex items-center transition-all duration-500 ${scrolled ? 'bg-white/80 backdrop-blur-2xl border-b border-slate-200 shadow-sm' : 'bg-transparent border-b border-transparent'}`}>
-      <div className="container mx-auto px-6 flex items-center justify-between">
-        <Link to="/" className="text-2xl font-black flex items-center gap-3 group">
-          <motion.div 
-            whileHover={{ rotate: 180 }}
-            className="p-2.5 rounded-2xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm border border-blue-100"
-          >
-            <Zap size={22} fill="currentColor" />
-          </motion.div>
-          <span className="tracking-tighter font-outfit text-slate-900">
-            Resume<span className="text-blue-600">Architect</span>
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 h-16 flex items-center transition-all ${
+        scrolled ? 'bg-white/90 backdrop-blur-md border-b border-stone-100 shadow-sm' : 'bg-transparent'
+      }`}
+    >
+      <div className="max-w-6xl mx-auto w-full px-6 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2 group">
+          <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+            <PenLine size={18} />
+          </div>
+          <span className="font-serif font-semibold text-stone-900 text-lg">
+            Resume<span className="text-emerald-600">Architect</span>
           </span>
         </Link>
-        
+
         {user && !isAuthPage && (
-          <div className="hidden lg:flex items-center gap-10">
-            <NavLink to="/dashboard" label="Terminal" active={location.pathname === '/dashboard'} />
-            <NavLink to="/builder" label="Architect" active={location.pathname.includes('/builder')} />
+          <div className="hidden sm:flex items-center gap-1">
+            <NavLink to="/dashboard" label="Dashboard" active={location.pathname === '/dashboard'} />
+            <NavLink to="/builder" label="Builder" active={location.pathname.includes('/builder')} />
+            <NavLink to="/pricing" label="Pricing" active={location.pathname === '/pricing'} />
           </div>
         )}
-        
-        <div className="flex items-center gap-6">
+
+        <div className="flex items-center gap-4">
           {user ? (
-            <div className="flex items-center gap-6">
-              <div className="hidden sm:flex items-center gap-3 px-4 py-2 rounded-2xl bg-slate-50 border border-slate-100 shadow-inner">
-                <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
-                  <UserIcon size={14} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
-                    {user?.tier === 'pro' ? 'Pro' : 'Free'}
+            <>
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-100 text-stone-600 text-sm">
+                <span className="font-medium">{user?.email?.split('@')[0]}</span>
+                {user?.tier === 'pro' && (
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-xs font-medium">
+                    Pro
                   </span>
-                  <span className="text-xs font-bold text-slate-700 truncate max-w-[120px]">
-                    {user?.email?.split('@')[0] || 'User'}
-                  </span>
-                </div>
+                )}
               </div>
-              <button 
+              <button
                 onClick={handleLogout}
-                className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-100 rounded-xl transition-all border border-transparent shadow-sm"
-                title="Disconnect"
+                className="p-2 text-stone-500 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition-colors"
+                title="Sign out"
               >
                 <LogOut size={18} />
               </button>
-            </div>
-          ) : !isAuthPage && (
-            <div className="flex items-center gap-8">
-              <Link to="/login" className="text-sm font-bold uppercase tracking-widest text-slate-500 hover:text-blue-600 transition-colors">
-                Console
-              </Link>
-              <Link to="/register" className="btn-premium py-3 px-8 text-xs">
-                Initialize
-              </Link>
-            </div>
+            </>
+          ) : (
+            !isAuthPage && (
+              <div className="flex items-center gap-3">
+                <Link to="/pricing" className="text-sm font-medium text-stone-600 hover:text-stone-900">
+                  Pricing
+                </Link>
+                <Link to="/login" className="text-sm font-medium text-stone-600 hover:text-stone-900">
+                  Sign in
+                </Link>
+                <Link to="/register" className="btn-primary py-2.5 px-5 text-sm">
+                  Get started
+                </Link>
+              </div>
+            )
           )}
         </div>
       </div>
@@ -85,17 +86,13 @@ const Navbar = () => {
 };
 
 const NavLink = ({ to, label, active }) => (
-  <Link 
-    to={to} 
-    className={`relative text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:text-blue-600 ${active ? 'text-blue-600' : 'text-slate-500'}`}
+  <Link
+    to={to}
+    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+      active ? 'bg-emerald-50 text-emerald-700' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
+    }`}
   >
     {label}
-    {active && (
-      <motion.div 
-        layoutId="nav-active"
-        className="absolute -bottom-2 left-0 right-0 h-0.5 bg-blue-600 rounded-full"
-      />
-    )}
   </Link>
 );
 

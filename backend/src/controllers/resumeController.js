@@ -4,7 +4,17 @@ class ResumeController {
   async createResume(req, res) {
     const { name, content } = req.body;
     const user_id = req.user.id;
+    const tier = req.user.tier || 'free';
+    const FREE_RESUME_LIMIT = 3;
+
     try {
+      if (tier === 'free') {
+        const { count } = await supabase.from('resumes').select('*', { count: 'exact', head: true }).eq('user_id', user_id);
+        if ((count ?? 0) >= FREE_RESUME_LIMIT) {
+          return res.status(403).json({ error: `Free plan limited to ${FREE_RESUME_LIMIT} resumes. Upgrade to Pro for unlimited.` });
+        }
+      }
+
       const { data, error } = await supabase
         .from('resumes')
         .insert([{ name, content, user_id }])
