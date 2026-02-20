@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-inter: "Inter", system-ui, -apple-system, sans-serif;
+  --font-outfit: "Outfit", sans-serif;
+
+  --color-brand-blue-50: #eff6ff;
+  --color-brand-blue-100: #dbeafe;
+  --color-brand-blue-600: #2563eb;
+  --color-brand-blue-700: #1d4ed8;
+  
+  --radius-custom: 0.75rem;
+}
+
+@layer base {
+  body {
+    @apply font-inter bg-slate-50 text-slate-900;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-outfit tracking-tight;
+  }
+}
+
+@layer components {
+  .btn-premium {
+    @apply inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-full font-bold transition-all hover:bg-blue-700 hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-outline-blue {
+    @apply inline-flex items-center gap-2 px-6 py-3 bg-white border border-blue-200 text-blue-600 rounded-full font-bold transition-all hover:bg-blue-50 hover:border-blue-300 active:scale-95;
+  }
+  
+  .glass-card-light {
+    @apply bg-white/80 backdrop-blur-md border border-slate-200 rounded-2xl p-8 shadow-sm transition-all hover:shadow-md;
+  }
+  
+  .input-premium-light {
+    @apply w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all placeholder:text-slate-400;
+  }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float-slow {
+  animation: float 6s ease-in-out infinite;
+}
+
