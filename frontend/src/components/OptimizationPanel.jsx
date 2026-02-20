@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Sparkles, Target, AlertCircle, CheckCircle2, FileCheck, Zap, ArrowRight, Clipboard } from 'lucide-react';
-import { jobService, aiService } from '../services/api';
+import { jobService, aiService, subscriptionService } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const OptimizationPanel = ({ resumeData, onUpdate }) => {
+const OptimizationPanel = ({ resumeData, onUpdate, isPro = true, onUpgrade }) => {
   const [jd, setJd] = useState('');
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
@@ -11,6 +11,7 @@ const OptimizationPanel = ({ resumeData, onUpdate }) => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [coverLetter, setCoverLetter] = useState('');
   const [isGeneratingCL, setIsGeneratingCL] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
 
   const handleAnalyze = async () => {
     setLoading(true);
@@ -19,7 +20,12 @@ const OptimizationPanel = ({ resumeData, onUpdate }) => {
       setAnalysis(res.data.analysis);
       
       // We still need to pass a valid resume_id. For now, we'll use a placeholder or ID from props if available.
-      const scoreRes = await jobService.scoreResume(resumeData.id || 'mock-id', res.data.id);
+      let scoreRes = { data: { score: 0 } };
+      if (resumeData.id && res.data.id) {
+        try {
+          scoreRes = await jobService.scoreResume(resumeData.id, res.data.id);
+        } catch (_) {}
+      }
       setScore(scoreRes.data.score);
     } catch (error) {
       console.error(error);
@@ -29,10 +35,11 @@ const OptimizationPanel = ({ resumeData, onUpdate }) => {
   };
 
   const handleOptimize = async () => {
+    if (!resumeData.experience?.length) return;
     setIsOptimizing(true);
     try {
-      const bulletPoints = resumeData.experience.map(exp => exp.description);
-      const targetKeywords = analysis.technical_skills.concat(analysis.keywords);
+      const bulletPoints = resumeData.experience.map(exp => exp.description || '');
+      const targetKeywords = analysis.keywords || [...(analysis.skills || []), ...(analysis.technologies || []), ...(analysis.focus_areas || [])];
       
       const res = await aiService.optimizeBullets(bulletPoints, targetKeywords);
       
@@ -117,17 +124,28 @@ const OptimizationPanel = ({ resumeData, onUpdate }) => {
               </div>
               <div className="bg-white p-6 rounded-3xl border border-slate-100 flex flex-col items-center justify-center text-center shadow-sm">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Keywords Synced</span>
-                <span className="text-4xl font-black text-slate-900">{analysis.technical_skills.length}</span>
+                <span className="text-4xl font-black text-slate-900">{(analysis.keywords || []).length}</span>
               </div>
             </div>
 
-            <button 
-              onClick={handleOptimize}
-              disabled={isOptimizing}
-              className="btn-premium w-full bg-slate-900 text-white py-4 shadow-xl hover:bg-slate-800"
-            >
-              {isOptimizing ? 'Re-engineering...' : 'Auto-Optimize Content'} <Sparkles size={20} className="ml-2" />
-            </button>
+            {!isPro ? (
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium flex flex-col gap-3">
+                Upgrade to Pro to unlock AI bullet optimization.
+                <button onClick={async () => { setUpgrading(true); try { await subscriptionService.upgrade(); onUpgrade?.(); } catch (e) {} finally { setUpgrading(false); }}}
+                  disabled={upgrading}
+                  className="btn-premium py-2 text-xs">
+                  {upgrading ? 'Upgrading...' : 'Upgrade to Pro (Demo)'}
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={handleOptimize}
+                disabled={isOptimizing}
+                className="btn-premium w-full bg-slate-900 text-white py-4 shadow-xl hover:bg-slate-800"
+              >
+                {isOptimizing ? 'Re-engineering...' : 'Auto-Optimize Content'} <Sparkles size={20} className="ml-2" />
+              </button>
+            )}
 
             {/* Cover Letter Panel */}
             <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
@@ -155,6 +173,10 @@ const OptimizationPanel = ({ resumeData, onUpdate }) => {
                     <Clipboard size={16} /> Copy Synthesis
                   </button>
                 </motion.div>
+              ) : !isPro ? (
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
+                  Upgrade to Pro to generate AI cover letters.
+                </div>
               ) : (
                 <button 
                   onClick={handleGenerateCL}

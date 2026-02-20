@@ -11,6 +11,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [successData, setSuccessData] = useState(null);
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -25,8 +26,9 @@ const Register = () => {
         fullName
       });
       if (data.error) throw new Error(data.error);
+      setSuccessData(data);
       setSuccess(true);
-      setTimeout(() => navigate('/login'), 5000);
+      setTimeout(() => navigate(data?.token ? '/dashboard' : '/login'), data?.token ? 500 : 5000);
     } catch (err) {
       setError(err.message || 'Failed to create account');
     } finally {
@@ -75,8 +77,14 @@ const Register = () => {
                 <CheckCircle size={48} />
               </div>
             </div>
-            <h3 className="text-2xl font-black mb-3 text-slate-900 tracking-tight">Check your inbox</h3>
-            <p className="text-slate-500 text-sm font-medium">We've sent a confirmation link to <span className="text-blue-600">{email}</span>. Redirecting to login...</p>
+            <h3 className="text-2xl font-black mb-3 text-slate-900 tracking-tight">
+              {successData?.token ? 'Account created' : 'Check your inbox'}
+            </h3>
+            <p className="text-slate-500 text-sm font-medium">
+              {successData?.token
+                ? 'Taking you to your dashboard...'
+                : `We've sent a confirmation link to ${email}. Redirecting to login...`}
+            </p>
           </motion.div>
         ) : (
           <form className="space-y-5" onSubmit={handleSubmit}>

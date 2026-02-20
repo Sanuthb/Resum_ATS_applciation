@@ -37,9 +37,14 @@ class JobController {
       if (resumeRes.error || jobRes.error) throw new Error('Failed to fetch data');
 
       const resumeData = resumeRes.data.content;
-      const jdKeywords = jobRes.data.extracted_keywords.technical_skills.concat(
-        jobRes.data.extracted_keywords.keywords
-      );
+      const kw = jobRes.data.extracted_keywords || {};
+      const jdKeywords = [
+        ...(Array.isArray(kw.skills) ? kw.skills : []),
+        ...(Array.isArray(kw.technologies) ? kw.technologies : []),
+        ...(Array.isArray(kw.focus_areas) ? kw.focus_areas : []),
+        ...(Array.isArray(kw.technical_skills) ? kw.technical_skills : []),
+        ...(Array.isArray(kw.keywords) ? kw.keywords : [])
+      ].filter((v, i, a) => a.indexOf(v) === i);
 
       const scoringResult = scoringService.calculateScore(resumeData, jdKeywords);
       

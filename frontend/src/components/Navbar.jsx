@@ -52,9 +52,11 @@ const Navbar = () => {
                   <UserIcon size={14} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Active User</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+                    {user?.tier === 'pro' ? 'Pro' : 'Free'}
+                  </span>
                   <span className="text-xs font-bold text-slate-700 truncate max-w-[120px]">
-                    {user.email.split('@')[0]}
+                    {user?.email?.split('@')[0] || 'User'}
                   </span>
                 </div>
               </div>

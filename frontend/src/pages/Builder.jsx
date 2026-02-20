@@ -1,26 +1,79 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Save, Download, Sparkles, Layout, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ResumeForm from '../components/ResumeForm';
 import ResumePreview from '../components/ResumePreview';
 import OptimizationPanel from '../components/OptimizationPanel';
+import TemplateSelector from '../components/TemplateSelector';
 import { resumeService, pdfService } from '../services/api';
+import { useAuth } from '../hooks/useAuth';
+
+const DEFAULT_RESUME = {
+  name: 'Untitled Architecture',
+  personalInfo: { fullName: '', email: '', phone: '', location: '', website: '', linkedin: '', github: '' },
+  education: [],
+  experience: [],
+  projects: [],
+  skills: [],
+  summary: '',
+  publications: [],
+  interests: [],
+  templateId: 'modern',
+  labels: {
+    summary: "Operational Summary",
+    experience: "Career Trajectory",
+    education: "Knowledge Foundations",
+    skills: "Core Expertise",
+    projects: "Project Modules",
+    publications: "Publications & Patents",
+    interests: "Interests",
+    tagline: "Professional Portfolio Module"
+  }
+};
 
 const Builder = () => {
+  const { id } = useParams();
+  const { user, refreshUser } = useAuth();
   const [resumeData, setResumeData] = useState({
-    name: 'Untitled Architecture',
-    personalInfo: { fullName: '', email: '', phone: '', location: '', website: '' },
-    education: [],
-    experience: [],
-    projects: [],
-    skills: [],
-    summary: ''
+    ...DEFAULT_RESUME
   });
 
-  const [activeTab, setActiveTab] = useState('edit'); // 'edit', 'optimize'
+  const [activeTab, setActiveTab] = useState('edit');
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(!!id);
+
+  useEffect(() => {
+    if (!id) return;
+    const fetchResume = async () => {
+      try {
+        const { data } = await resumeService.getResume(id);
+        const content = data.content || {};
+        setResumeData({
+          ...DEFAULT_RESUME,
+          id: data.id,
+          name: data.name || DEFAULT_RESUME.name,
+          personalInfo: { ...DEFAULT_RESUME.personalInfo, ...content.personalInfo },
+          education: content.education || [],
+          experience: content.experience || [],
+          projects: content.projects || [],
+          skills: content.skills || [],
+          summary: content.summary || '',
+          publications: content.publications || [],
+          interests: content.interests || [],
+          templateId: content.templateId || 'modern',
+          labels: { ...DEFAULT_RESUME.labels, ...content.labels }
+        });
+      } catch (err) {
+        console.error('Failed to load resume:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchResume();
+  }, [id]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -80,6 +133,17 @@ const Builder = () => {
     setResumeData(newData);
   };
 
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50 pt-20">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+          <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Loading architecture...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-slate-50 pt-20">
       {/* Top Bar - Architectural Console */}
@@ -134,6 +198,11 @@ const Builder = () => {
             icon={<Layout size={20} />} 
           />
           <SidebarIcon 
+            active={activeTab === 'design'} 
+            onClick={() => setActiveTab('design')} 
+            icon={<Layout size={20} />} 
+          />
+          <SidebarIcon 
             active={activeTab === 'optimize'} 
             onClick={() => setActiveTab('optimize')} 
             icon={<Sparkles size={20} />} 
@@ -157,6 +226,28 @@ const Builder = () => {
                 </div>
                 <ResumeForm data={resumeData} onUpdate={handleUpdate} />
               </motion.div>
+            ) : activeTab === 'design' ? (
+              <motion.div
+                key="design"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="flex flex-col gap-6"
+              >
+                <div className="mb-12">
+                  <h2 className="text-4xl font-black mb-2 tracking-tight text-slate-900">Aesthetics</h2>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Visual Logic & Identity</p>
+                </div>
+                <TemplateSelector 
+                  selectedId={resumeData.templateId} 
+                  onSelect={(id) => handleUpdate({ ...resumeData, templateId: id })}
+                  labels={resumeData.labels}
+                  onLabelChange={(key, val) => handleUpdate({ 
+                    ...resumeData, 
+                    labels: { ...resumeData.labels, [key]: val } 
+                  })}
+                />
+              </motion.div>
             ) : (
               <motion.div
                 key="optimize"
@@ -170,7 +261,7 @@ const Builder = () => {
                   <h2 className="text-4xl font-black mb-2 tracking-tight text-blue-600">Intelligence</h2>
                   <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Optimizing for Protocols</p>
                 </div>
-                <OptimizationPanel resumeData={resumeData} onUpdate={handleUpdate} />
+                <OptimizationPanel resumeData={resumeData} onUpdate={handleUpdate} isPro={user?.tier === 'pro'} onUpgrade={refreshUser} />
               </motion.div>
             )}
           </AnimatePresence>

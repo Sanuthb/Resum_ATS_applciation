@@ -1,8 +1,8 @@
 const supabase = require('../config/supabase');
 const jwt = require('jsonwebtoken');
 
-const signToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'secret-key', {
+const signToken = (id, email) => {
+  return jwt.sign({ id, email }, process.env.JWT_SECRET || 'secret-key', {
     expiresIn: '7d'
   });
 };
@@ -33,7 +33,7 @@ exports.register = async (req, res) => {
 
     if (error) return res.status(400).json({ error: error.message });
 
-    const token = signToken(data.user.id);
+    const token = signToken(data.user.id, data.user.email);
 
     res.status(201).json({
       status: 'success',
@@ -59,7 +59,7 @@ exports.login = async (req, res) => {
 
     if (error) return res.status(401).json({ error: error.message });
 
-    const token = signToken(data.user.id);
+    const token = signToken(data.user.id, data.user.email);
 
     res.status(200).json({
       status: 'success',
@@ -76,9 +76,26 @@ exports.login = async (req, res) => {
 };
 
 exports.getMe = async (req, res) => {
-  // User is already attached to req by protect middleware
-  res.status(200).json({
-    status: 'success',
-    user: req.user
-  });
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, tier')
+      .eq('id', req.user.id)
+      .single();
+
+    res.status(200).json({
+      status: 'success',
+      user: {
+        id: req.user.id,
+        email: req.user.email,
+        fullName: profile?.full_name,
+        tier: profile?.tier || 'free'
+      }
+    });
+  } catch (err) {
+    res.status(200).json({
+      status: 'success',
+      user: { ...req.user, tier: 'free' }
+    });
+  }
 };

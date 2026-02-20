@@ -5,8 +5,12 @@ create extension if not exists "uuid-ossp";
 create table if not exists public.profiles (
     id uuid references auth.users(id) on delete cascade primary key,
     full_name text,
+    tier text default 'free' check (tier in ('free', 'pro')),
     updated_at timestamptz default now()
 );
+
+-- Add tier column if table already exists (migration)
+alter table public.profiles add column if not exists tier text default 'free';
 
 -- Resumes Table
 create table if not exists public.resumes (

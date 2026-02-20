@@ -22,8 +22,10 @@ export const authService = {
 
 export const resumeService = {
   getResumes: () => api.get('/resumes'),
+  getResume: (id) => api.get(`/resumes/${id}`),
   createResume: (data) => api.post('/resumes', data),
   updateResume: (id, data) => api.put(`/resumes/${id}`, data),
+  deleteResume: (id) => api.delete(`/resumes/${id}`),
 };
 
 export const jobService = {
@@ -34,6 +36,10 @@ export const jobService = {
 export const aiService = {
   optimizeBullets: (bulletPoints, targetKeywords) => api.post('/ai/optimize', { bulletPoints, targetKeywords }),
   generateCoverLetter: (resumeContent, jdContent) => api.post('/ai/cover-letter', { resumeContent, jdContent }),
+};
+
+export const subscriptionService = {
+  upgrade: () => api.post('/subscription/upgrade'),
 };
 
 export const pdfService = {

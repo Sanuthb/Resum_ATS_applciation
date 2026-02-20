@@ -14,10 +14,15 @@ exports.protect = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret-key');
+    req.user = decoded;
 
-    // In a real app, we might verify if user still exists in DB
-    // For now, we trust the JWT and Supabase handles data access
-    req.user = { id: decoded.id };
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('tier')
+      .eq('id', decoded.id)
+      .single();
+    req.user.tier = profile?.tier || 'free';
+
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Invalid token or session expired.' });

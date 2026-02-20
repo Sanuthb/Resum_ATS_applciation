@@ -1,91 +1,46 @@
 const groq = require('../config/groq');
 
 class AIService {
-  async analyzeJobDescription(jdContent) {
-    const prompt = `
-      Analyze the following job description and extract:
-      1. Top 10 key technical skills.
-      2. Top 5 soft skills.
-      3. Important industry-specific keywords.
-      4. A brief summary of the ideal candidate profile.
-
-      Return the result in JSON format with the following keys:
-      technical_skills, soft_skills, keywords, ideal_profile.
-
-      Job Description:
-      ${jdContent}
-    `;
-
-    try {
-      const completion = await groq.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
-        model: 'llama-3.3-70b-versatile',
-        response_format: { type: 'json_object' },
-      });
-
-      return JSON.parse(completion.choices[0].message.content);
-    } catch (error) {
-      console.error('Error in analyzeJobDescription:', error);
-      throw new Error('AI Analysis failed');
-    }
+  async analyzeJobDescription(jdText) {
+    const prompt = `Extract key skills, technologies, and required experience from this job description. Return as a JSON object with keys: skills, technologies, and focus_areas.\n\nJD: ${jdText}`;
+    
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama3-8b-8192',
+      response_format: { type: 'json_object' }
+    });
+    
+    const parsed = JSON.parse(completion.choices[0].message.content);
+    const skills = Array.isArray(parsed.skills) ? parsed.skills : [];
+    const technologies = Array.isArray(parsed.technologies) ? parsed.technologies : [];
+    const focus_areas = Array.isArray(parsed.focus_areas) ? parsed.focus_areas : [];
+    const keywords = [...skills, ...technologies, ...focus_areas].filter((v, i, a) => a.indexOf(v) === i);
+    return { skills, technologies, focus_areas, keywords };
   }
 
   async optimizeResumeBulletPoints(bulletPoints, targetKeywords) {
-    const prompt = `
-      Rewrite the following resume bullet points to better align with these target keywords: ${targetKeywords.join(', ')}.
-      
-      Guidelines:
-      - Use strong action verbs.
-      - Quantify impact where possible (even if you have to use placeholders like [X]%).
-      - Maintain the original meaning and factual integrity.
-      - Keep them concise and professional.
-
-      Bullet Points:
-      ${bulletPoints.map(bp => `- ${bp}`).join('\n')}
-
-      Return the result as a JSON array of optimized strings.
-    `;
-
-    try {
-      const completion = await groq.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
-        model: 'llama-3.3-70b-versatile',
-        response_format: { type: 'json_object' },
-      });
-
-      const response = JSON.parse(completion.choices[0].message.content);
-      return Array.isArray(response) ? response : response.optimized_bullets;
-    } catch (error) {
-      console.error('Error in optimizeResume:', error);
-      throw new Error('AI Optimization failed');
-    }
+    const prompt = `Rewrite these resume bullet points to better align with keywords: ${targetKeywords.join(', ')}. Use active verbs and quantify impact. Return a JSON array of strings.\n\nBullets: ${JSON.stringify(bulletPoints)}`;
+    
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama3-70b-8192',
+      response_format: { type: 'json_object' }
+    });
+    
+    const res = JSON.parse(completion.choices[0].message.content);
+    return Array.isArray(res) ? res : (res.optimized || res.bullets || Object.values(res)[0]);
   }
 
   async generateCoverLetter(resumeContent, jdContent) {
-    const prompt = `
-      Generate a professional and tailored cover letter based on the provide resume and job description.
-      
-      Resume:
-      ${JSON.stringify(resumeContent)}
-
-      Job Description:
-      ${jdContent}
-
-      Return the cover letter text in a JSON object with the key "cover_letter".
-    `;
-
-    try {
-      const completion = await groq.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
-        model: 'llama-3.3-70b-versatile',
-        response_format: { type: 'json_object' },
-      });
-
-      return JSON.parse(completion.choices[0].message.content).cover_letter;
-    } catch (error) {
-      console.error('Error in generateCoverLetter:', error);
-      throw new Error('Cover Letter generation failed');
-    }
+    const prompt = `Write a tailored cover letter based on this resume and job description. Return a JSON object with a "coverLetter" key.\n\nResume: ${JSON.stringify(resumeContent)}\n\nJD: ${jdContent}`;
+    
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama3-70b-8192',
+      response_format: { type: 'json_object' }
+    });
+    
+    return JSON.parse(completion.choices[0].message.content).coverLetter;
   }
 }
 

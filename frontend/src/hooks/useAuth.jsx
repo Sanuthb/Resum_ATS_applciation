@@ -33,7 +33,12 @@ export const AuthProvider = ({ children }) => {
     const { data } = await authService.login(credentials);
     if (data.token) {
       localStorage.setItem('resume_ats_token', data.token);
-      setUser(data.user);
+      try {
+        const { data: me } = await authService.getMe();
+        setUser(me.user);
+      } catch {
+        setUser(data.user);
+      }
     }
     return data;
   };
@@ -42,7 +47,12 @@ export const AuthProvider = ({ children }) => {
     const { data } = await authService.register(userData);
     if (data.token) {
       localStorage.setItem('resume_ats_token', data.token);
-      setUser(data.user);
+      try {
+        const { data: me } = await authService.getMe();
+        setUser(me.user);
+      } catch {
+        setUser(data.user);
+      }
     }
     return data;
   };
@@ -52,10 +62,22 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    const token = localStorage.getItem('resume_ats_token');
+    if (!token) return;
+    try {
+      const { data } = await authService.getMe();
+      setUser(data.user);
+    } catch {
+      setUser(null);
+    }
+  };
+
   const value = {
     signIn,
     signUp,
     signOut,
+    refreshUser,
     user,
   };
 
